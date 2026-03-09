@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json" >
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Budget Tracker - Core</title>
+    <style>
+        :root {
+            --b-dark: #020408;
+            --b-panel: #0d1117;
+            --blue: #00d4ff;
+            --blue-glow: rgba(0, 212, 255, 0.4);
+            --text-gray: #8b949e;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background: var(--b-dark);
+            color: #fff;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 60px 20px;
+        }
+
+        .c { 
+            background: var(--b-panel); 
+            background-image: radial-gradient(rgba(0, 212, 255, 0.05) 1px, transparent 0);
+            background-size: 20px 20px;
+            padding: 45px; 
+            border-radius: 2px; 
+            width: 100%;
+            max-width: 460px; 
+            border: 1px solid #30363d;
+            border-left: 6px solid var(--blue);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 212, 255, 0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .c::after {
+            content: "";
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            border-right: 2px solid var(--blue);
+            border-bottom: 2px solid var(--blue);
+        }
+
+        .c::before {
+            content: "ID: 88-ALPHA-SYS";
+            position: absolute;
+            top: -28px;
+            left: 0;
+            font-size: 0.65rem;
+            color: var(--blue);
+            letter-spacing: 3px;
+            font-weight: bold;
+            text-shadow: 0 0 8px var(--blue-glow);
+        }
+
+        h3 { 
+            text-align: left; 
+            font-size: 0.8rem; 
+            color: var(--text-gray);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .amt-display {
+            font-weight: 900;
+            font-size: 3.6rem;
+            text-align: left;
+            margin-bottom: 35px;
+            color: #fff;
+            text-shadow: 0 0 15px var(--blue-glow);
+            font-family: 'Courier New', monospace;
+            animation: pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; text-shadow: 0 0 25px var(--blue-glow); }
+        }
+
+        .peso-sign { font-size: 2.2rem; color: var(--blue); margin-right: 8px; }
+
+        input { 
+            width: 100%; 
+            box-sizing: border-box;
+            margin-bottom: 18px; 
+            padding: 18px; 
+            background: #000;
+            border: 1px solid #30363d; 
+            border-radius: 0;
+            color: var(--blue);
+            outline: none;
+            transition: 0.3s;
+            font-size: 1.1rem;
+            font-family: monospace;
+        }
+
+        input:focus { 
+            border-color: var(--blue); 
+            background: rgba(0, 212, 255, 0.08);
+        }
+
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        button { 
+            padding: 18px; 
+            background: var(--blue); 
+            color: #000; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            clip-path: polygon(0% 20%, 15% 0%, 100% 0%, 100% 80%, 85% 100%, 0% 100%);
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        button:hover { 
+            background: #fff;
+            box-shadow: 0 0 30px var(--blue-glow);
+            letter-spacing: 4px;
+        }
+
+        .clr { 
+            background: transparent; 
+            color: var(--text-gray); 
+            border: 1px solid #30363d;
+            clip-path: none; 
+        }
+
+        .clr:hover { color: #ff4a4a; border-color: #ff4a4a; background: rgba(255, 74, 74, 0.1); letter-spacing: 2px; }
+
+        ul { list-style: none; padding: 0; margin-top: 40px; border-top: 1px solid #30363d; }
+
+        li { 
+            padding: 18px; 
+            background: rgba(0, 212, 255, 0.01);
+            border-bottom: 1px solid #21262d;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        li:hover { background: rgba(0, 212, 255, 0.05); }
+
+        .item-row { display: flex; align-items: center; gap: 12px; font-weight: 500; color: #c9d1d9; font-size: 1rem; }
+        .item-row i { color: var(--blue); font-size: 0.8rem; filter: drop-shadow(0 0 5px var(--blue)); }
+
+        .amt-row { font-weight: 700; color: #fff; font-family: monospace; font-size: 1.1rem; }
+        
+        .r { color: #484f58; cursor: pointer; margin-left: 15px; transition: 0.2s; }
+        .r:hover { color: var(--blue); transform: rotate(90deg) scale(1.3); }
+
+        @media (max-width: 480px) {
+            .c { padding: 30px; }
+            .amt-display { font-size: 2.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="c">
+    <h3><i class="fas fa-microchip"></i> BUDGET_TRACKER</h3>
+    <div class="amt-display"><span class="peso-sign">&#8369;</span><span id="t">0.00</span></div>
+    
+    <input type="text" id="k" placeholder="ENTER ITEM">
+    <input type="number" id="v" placeholder="0.00">
+
+    <div class="btn-grid">
+        <button onclick="fn_a()"><i class="fas fa-plus-circle"></i> ADD</button>
+        <button class="clr" onclick="fn_c()">WIPE</button>
+    </div>
+
+    <ul id="l"></ul>
+</div>
+
+<script>
+    const _U = "https://svpoengtaofitoxwusdw.supabase.co"; 
+    const _K = "sb_publishable_9fV4x6dXsTRXgTPC9H-Wuw_hllQL-bC"; 
+    const db = supabase.createClient(_U, _K);
+
+    const _t = document.getElementById('t');
+    const _l = document.getElementById('l');
+    const _k = document.getElementById('k');
+    const _v = document.getElementById('v');
+
+    async function fn_s() {
+        let { data: rs, error: err } = await db.from('budget_db').select('*');
+        if (err) return;
+
+        _l.innerHTML = "";
+        let total = 0;
+        rs.forEach(i => {
+            total += i.amount;
+            let row = document.createElement('li');
+            row.innerHTML = `
+                <div class="item-row"><i class="fas fa-angle-right"></i> ${i.item}</div> 
+                <div class="amt-row">
+                    &#8369;${i.amount.toFixed(2)} 
+                    <i class="fas fa-times r" onclick="fn_x(${i.id})"></i>
+                </div>
+            `;
+            _l.appendChild(row);
+        });
+        _t.innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2});
+    }
+
+    async function fn_a() {
+        let n = _k.value;
+        let p = parseFloat(_v.value);
+        if (n && p > 0) {
+            await db.from('budget_db').insert([{ item: n, amount: p }]);
+            fn_s(); 
+            _k.value = ''; _v.value = '';
+        }
+    }
+
+    async function fn_x(id) {
+        await db.from('budget_db').delete().eq('id', id);
+        fn_s();
+    }
+
+    async function fn_c() {
+        if(confirm("Confirm system wipe?")) {
+            await db.from('budget_db').delete().neq('id', 0);
+            fn_s();
+        }
+    }
+
+    fn_s();
+
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/service-worker.js")
+        .then(() => console.log("OK"))
+        .catch((e) => console.log(e));
+    }
+</script>
+
+</body>
+</html>
